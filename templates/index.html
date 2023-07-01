@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-giJF6kkoqNQ00vy+HMDP7azOuL0xtbfIcaT9wjKHr8RbDVddVHyTfAAsrekwKmP1" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-ygbV9kiqUc6oa4msXn9868pTtWMgiQaeYH7/t7LECLbyPA2x65Kgf80OJFdroafW" crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/jquery-3.5.1.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.1.1/socket.io.js"></script>
+    <meta charset="utf-8">
+    <title>Sterownik DALI Raspberry Pi 3B+</title>
+  </head>
+  <body style="margin-left: 40px;">
+    <h1 style="text-align:center">Sterownik DALI Raspberry Pi 3B+</h1>
+    <!-- <h2 class="mt-5" style="text-align: left;">Initialization DALi bus</h2> -->
+    <h2 class="mt-5" >Initialization DALi bus</h2>
+    <div>
+        <button type="button" class="btn btn-primary btn-lg shadow-none" onclick="bus_init()">Bus initialization</button> <br> </br>
+    </div>
+    <!-- <h2 class="mt-5" style="text-align: left;">Setup your DALI short address 0-63</h2> -->
+    <h2 class="mt-5" >Check LW14 status register</h2>
+    <div>
+      <span>Your actual status register: </span>
+      <br>
+      <span id="string_display">0</span>
+      <br>
+      <button type="button" class="btn btn-primary btn-lg shadow-none" onclick="check_register(document.getElementById('string_display').id);">Check status register</button> 
+    </div>
+    <h2 class="mt-5" >Setup your DALI short address 0-63</h2>
+    <div>
+        <input type="number" min="0" max="63" class="form-control" id="dali_short_address_1" name="dali_short_address" style="width: 20rem;" placeholder="Short address 0-63" >
+        <br>
+        <button type="button" class="btn btn-primary btn-lg shadow-none" onclick="setup_short_address(); display(document.getElementById('dali_short_address_1'). value,document.getElementById('dali_short_address_1').id);">Setup your new short address</button> 
+        <br>
+        <span>Your short address: </span>
+        <span id="dali_short_address_1_display">0</span>
+    </div>
+    <h2 class="mt-5" style="text-align: left;">Set lamp power level with defined short address</h2>
+    <div>
+        <input type="number" min="0" max="63" placeholder="Your lamp short address 0-63" class="form-control" id="lamp_short_address_1" name="lamp_short_address" style="width: 20rem;">
+        <input type="number" min="0" max="254" placeholder="Your required power level 0-254" class="form-control" id="lamp_short_address_level_1" name="short_address_level" style="width: 20rem;">
+        <br>
+        <button type="button" class="btn btn-primary btn-lg shadow-none" onclick="short_address_power_level(); 
+                        display(document.getElementById('lamp_short_address_1').value, document.getElementById('lamp_short_address_1').id);
+                        display(document.getElementById('lamp_short_address_level_1').value, document.getElementById('lamp_short_address_level_1').id);"
+        >Setup your power level with given short address</button> 
+        <br>
+        <span>Your selected short address: </span>
+        <span id="lamp_short_address_1_display">0</span>
+        <span>Your selected power level: </span>
+        <span id="lamp_short_address_level_1_display">0</span>
+    </div>
+    <h2 class="mt-5" style="text-align: left;">Send indirect power level command as broadcast</h2>
+    <div>
+        <input type="number" min="0" max="31" class="form-control" id="dali_indirect_command_1" name="dali_indirect_command" style="width: 20rem;" placeholder="Indirect power level command 0-31">
+        <br>
+        <button type="button" class="btn btn-primary btn-lg shadow-none" onclick="broadcast_command(); display(document.getElementById('dali_indirect_command_1'). value,document.getElementById('dali_indirect_command_1').id);">Send your command</button> 
+        <br>
+        <span>Your last command: </span>
+        <span id="dali_indirect_command_1_display">0</span>
+    </div>
+    <h2 class="mt-5" style="text-align: left;">Set power level command as broadcast</h2>
+    <div>
+        <input type="number" min="0" max="254" class="form-control" id="broadcast_DAPC_1" name="broadcast_DAPC" style="width: 20rem;" placeholder="All lamps power level 0-254">
+        <br>
+        <button type="button" class="btn btn-primary btn-lg shadow-none" onclick="broadcast_DAPC(); display(document.getElementById('broadcast_DAPC_1'). value,document.getElementById('broadcast_DAPC_1').id);">Send your power level</button> 
+        <br>
+        <span>Your last required power level: </span>
+        <span id="broadcast_DAPC_1_display">0</span>
+    </div>
+    <h2 class="mt-5" style="text-align: left;">Automatic control</h2>
+    <div>
+        <input type="number" min="0" max="500" value="200" placeholder="Your setpoint (lx)" class="form-control" id="lux_setpoint_1" name="lux_setopint" style="width: 20rem;">
+        <input type="number" min="0" max="5" value="0.1" step="0.01" placeholder="Your Kp" class="form-control" id="Kp_1" name="Kp" style="width: 20rem;">
+        <input type="number" min="0" max="5" value="0.05" placeholder="Your Ki" class="form-control" id="Ki_1" name="Ki" style="width: 20rem;">
+        <br>
+        <button type="button" class="btn btn-primary btn-lg shadow-none" onclick="automatic_control_start(); 
+                        display(document.getElementById('lux_setpoint_1').value, document.getElementById('lux_setpoint_1').id);
+                        display(document.getElementById('Kp_1').value, document.getElementById('Kp_1').id);
+                        display(document.getElementById('Ki_1').value, document.getElementById('Ki_1').id);
+                        muteButtons(this);"
+        >Start automatic control</button>
+        <button type="button" class="btn btn-primary btn-lg shadow-none" onclick="automatic_control_stop();
+                                                                          restoreButtons(this);"
+        >Stop automatic control</button>  
+        <br>
+        <span>Your selected setpoint: </span>
+        <span id="lux_setpoint_1_display">0</span>
+        <span>Your regulator proportional gain: </span>
+        <span id="Kp_1_display">0</span>
+        <span>Your regulator integral gain: </span>
+        <span id="Ki_1_display">0</span>
+    </div>
+
+    <!-- <div>
+        <input type="number" min="0" max="255" value="0" class="form-control" id="light_level_1" name="light_level">
+        <span>Actual value: </span>
+        <span id="display1">0</span>
+        <br>
+        <button onclick="send(); display(document.getElementById('light_level_1'). value,document.getElementById('light_level_1').id);">Wyświetl</button> 
+        <br>
+        <button onclick="dodawanie()">Dodaj</button> 
+    </div> -->
+
+    <script>
+        function display(val, id) {
+          var str = id;
+          // var c = str.charAt(str.length - 1)
+          var val_id = str + "_display"
+          document.getElementById(val_id).innerHTML = val;
+        }
+    </script>
+
+    <script type="text/javascript">
+      var socket = io()
+
+      function bus_init(){
+        socket.emit('bus_init')
+      }
+
+      function setup_short_address(){
+        socket.emit('short_address_setup',
+        {'short_address':$('#dali_short_address_1').val()})
+      }
+
+      function short_address_power_level(){
+        socket.emit('short_address_power_level',
+        {'lamp_short_address': $('#lamp_short_address_1').val(),
+        'lamp_level': $('#lamp_short_address_level_1').val()})
+      }
+
+      function broadcast_command(){
+        socket.emit('broadcast_command',
+        {'command_number':$('#dali_indirect_command_1').val()})
+      }
+
+      function broadcast_DAPC(){
+        socket.emit('broadcast_DAPC',
+        {'power_level':$('#broadcast_DAPC_1').val()})
+      }
+
+      function automatic_control_start(){
+        socket.emit('automatic_control_start',
+        {'setpoint':$('#lux_setpoint_1').val(),
+        'Kp':$('#Kp_1').val(),
+        'Ki':$('#Ki_1').val(),
+        'enabled': '1'})
+      }
+
+      function automatic_control_stop(){
+        socket.emit('automatic_control_stop')
+      }
+
+      socket.on('message', msg => {
+                alert("WARNING !!! = " + msg.data)
+            })
+      
+      function check_register(id){
+        socket.emit('check_register')
+        socket.on('register', msg => {
+                document.getElementById(id).innerHTML = msg.data
+            })
+      }
+
+      function muteButtons(buttonObj)
+      {
+        buttons = document.getElementsByTagName('button');
+        for(i=0; i<buttons.length - 1; i++){
+          buttons[i].disabled=true;
+        }
+        console.log(buttons)
+        buttons[buttons.length - 1].disabled=false
+      }
+
+      function restoreButtons(linkObj)
+      {
+        buttons = document.getElementsByTagName('button');
+        for(i=0; i<buttons.length; i++){
+          buttons[i].disabled=false;
+        }
+        linkObj.disabled=true
+      }
+      // sending = setInterval(send, 1000);
+    </script>
+  </body>
+</html>
